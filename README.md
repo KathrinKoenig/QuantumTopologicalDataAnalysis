@@ -1,4 +1,4 @@
-# QuantumTopologicalDataAnalysis <img width=100 align="right" src="https://user-images.githubusercontent.com/67575757/116423376-eba89780-a840-11eb-843d-00e75ad735bc.jpg">
+# Quantum Topological Data Analysis <img width=100 align="right" src="https://user-images.githubusercontent.com/67575757/116423376-eba89780-a840-11eb-843d-00e75ad735bc.jpg">
 Implementation of a quantum algorithm to compute topological features of generic (high-dimensional) data clouds in Qiskit.
 
 Topological and geometric features of data are of increasing interest in data analysis to "understand" data and provide complementary global information for modern machine learning pipelines. Therefore, we implement a quantum algorithm to compute such topological features of data clouds, which yields exponential speed-up over all known classical algorithms.
