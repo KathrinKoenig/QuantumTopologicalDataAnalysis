@@ -80,28 +80,27 @@ def combinatorial_laplacian(n_vertices, k):
     delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1)
     return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T
 
-def initialize_projector(state):
+def initialize_projector(state, circuit=None):
     '''initializes projector onto subspace spanned by list of states'''
+    '''input circuit has to have classical register'''
     
     n_vertices = len(state[0])
     qr1 = QuantumRegister(n_vertices, name="qr1")
-    qr2 = AncillaRegister(n_vertices, name="qr2")
-    qc = QuantumCircuit(qr1,qr2)
+    anr = AncillaRegister(n_vertices, name="ancilla")
+    qc = QuantumCircuit(qr1,anr)
     
     state_vec = state_to_vec(state)
     state_vec = state_vec/np.linalg.norm(state_vec)
     qc.initialize(state_vec, qr1)
     qc.barrier()
     for k in range(n_vertices):
-        qc.cx(qr1[k],qr2[k])
+        qc.cx(qr1[k],anr[k])
     qc.barrier()
-    return qc
-
-def initialize_circuit_with_projector(state, circuit):
-    '''input circuit has to have classical register'''
-    qc_proj = initialize_projector(state)
-    qc_proj.add_register(ClassicalRegister(circuit.num_clbits, name="cr_test3"))
-    return qc_proj.compose(circuit, qubits=qr1)
+    if circuit == None:
+        return qc
+    else:
+        qc.add_register(ClassicalRegister(circuit.num_clbits, name="cr"))
+        return qc.compose(circuit, qubits=qr1)
 
 
 
