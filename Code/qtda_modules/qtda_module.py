@@ -35,8 +35,8 @@ def boundary_operator(x_tuple):
     k = len(indices)
     for i in range(k):
         helper = x_np.copy()
-        helper[indices[k-1-i]] = 0
-        dictionary[tuple(helper)] = (-1)**(i)
+        helper[indices[k-1-i]] = 0.
+        dictionary[tuple(helper)] = (-1.)**(i)
     return dictionary
 
 def boundary_operator_dict(n_vertices):
@@ -52,7 +52,7 @@ def boundary_operator_dict_k(n_vertices, k):
     dictionary = {}
     dictionary[(tuple([0 for i in range(n_vertices)]),tuple([0 for i in range(n_vertices)]))] = 0
     for b in it.product(range(2), repeat=n_vertices):
-        if np.sum(b) == k:
+        if np.sum(b) == k+1:
             helper = boundary_operator(b)
             for key in helper.keys():
                 dictionary[(tuple(b),key)] = helper[key]
@@ -80,6 +80,42 @@ def combinatorial_laplacian(n_vertices, k):
     delta_k = boundary_operator_crsmat_k(n_vertices, k)
     delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1)
     return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T
+
+def projector_onto_state(n_vertices, state):
+    basis_list = list(it.product(range(2), repeat=n_vertices))
+    basis_dict = {basis_list[i]: i for i in range(2**n_vertices)}
+    indices = [basis_dict[s] for s in state]
+    return csr_matrix((np.ones(len(indices)), (indices, indices)), shape=(2**n_vertices, 2**n_vertices))
+ 
+def projected_combinatorial_laplacian(n_vertices, k, state_dict):
+    P_k = projector_onto_state(n_vertices, state_dict[k])
+    P_kp1 = projector_onto_state(n_vertices, state_dict[k+1])
+    delta_k = boundary_operator_crsmat_k(n_vertices, k) @ P_k
+    delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1) @ P_kp1
+    return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T 
+  
+# #%%
+
+# print(combinatorial_laplacian(3, 1).toarray())
+
+# state_k = [(0,1,1), (1,1,0), (1,0,1)]
+# state_kp1 = [(1,1,1)]
+
+# state_dict = {1: [(0,1,1), (1,1,0), (1,0,1)], 2: [(1,1,1)]}
+
+# mat = projected_combinatorial_laplacian(3, 1, state_dict).toarray()
+# print(mat)
+
+# #%%
+# from scipy import linalg
+# U = np.array(linalg.eig(mat)[1])
+
+# print(U)
+
+# print(np.diagonal(U.T @ mat @ U))
+
+# #%%
+
 
 def initialize_projector(state, circuit=None, initialization_qubits=None, circuit_name=None):
     '''initializes projector onto subspace spanned by list of states'''
