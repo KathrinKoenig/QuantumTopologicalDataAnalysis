@@ -124,7 +124,8 @@ def initialize_projector(state, circuit=None, initialization_qubits=None, circui
             init = initialization_qubits
         rest = list(set(range(circuit.num_qubits)) - set(init))
         
-        sub_inst = circuit.to_instruction()
+        # sub_inst = circuit.to_instruction()
+        sub_inst = circuit.to_gate()
         if circuit_name != None:
             sub_inst.name = circuit_name
         qc.append(sub_inst, rest + init)
