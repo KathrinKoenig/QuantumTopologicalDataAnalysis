@@ -11,6 +11,7 @@ import itertools as it
 from scipy.sparse import csr_matrix
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, AncillaRegister
 
+
 def vec_to_state(vec):
     n_vertices = int(np.log2(len(vec)))
     basis_list = list(it.product(range(2), repeat=n_vertices))
@@ -80,33 +81,90 @@ def combinatorial_laplacian(n_vertices, k):
     delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1)
     return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T
 
-def initialize_projector(state, circuit=None):
+def initialize_projector(state, circuit=None, initialization_qubits=None, circuit_name=None):
     '''initializes projector onto subspace spanned by list of states'''
     '''input circuit has to have classical register'''
     
-    n_vertices = len(state[0])
-    qr1 = QuantumRegister(n_vertices, name="qr1")
-    anr = AncillaRegister(n_vertices, name="ancilla")
-    qc = QuantumCircuit(qr1,anr)
-    
-    state_vec = state_to_vec(state)
-    state_vec = state_vec/np.linalg.norm(state_vec)
-    qc.initialize(state_vec, qr1)
-    qc.barrier()
-    for k in range(n_vertices):
-        qc.cx(qr1[k],anr[k])
-    qc.barrier()
     if circuit == None:
+        n_vertices = len(state[0])
+        qr1 = QuantumRegister(n_vertices, name="state_reg")
+        copy_reg = QuantumRegister(n_vertices, name="copy_reg")
+        qc = QuantumCircuit(qr1,copy_reg)
+        
+        state_vec = state_to_vec(state)
+        state_vec = state_vec/np.linalg.norm(state_vec)
+        qc.initialize(state_vec, qr1)
+        qc.barrier()
+        for k in range(n_vertices):
+            qc.cx(qr1[k],copy_reg[k])
+        qc.barrier()
         return qc
     else:
-        qc.add_register(ClassicalRegister(circuit.num_clbits, name="cr"))
-        return qc.compose(circuit, qubits=qr1)
+        n_vertices = len(state[0])
+        qr1 = QuantumRegister(n_vertices, name="state_reg")
+        copy_reg = QuantumRegister(n_vertices, name="copy_reg")
+        # clr = ClassicalRegister(circuit.num_clbits, name="cr")
+        if circuit.num_qubits - n_vertices > 0:
+            anr = QuantumRegister(circuit.num_qubits - n_vertices, name="an_reg")
+            qc = QuantumCircuit(anr, qr1, copy_reg) #, clr)
+        else:
+            qc = QuantumCircuit(qr1, copy_reg) #, clr)
+        
+        state_vec = state_to_vec(state)
+        state_vec = state_vec/np.linalg.norm(state_vec)
+        qc.initialize(state_vec, qr1)
+        qc.barrier()
+        for k in range(n_vertices):
+            qc.cx(qr1[k],copy_reg[k])
+        qc.barrier()
+        
+        if initialization_qubits == None:
+            init = list(range(n_vertices))
+        else:
+            init = initialization_qubits
+        rest = list(set(range(circuit.num_qubits)) - set(init))
+        
+        sub_inst = circuit.to_instruction()
+        if circuit_name != None:
+            sub_inst.name = circuit_name
+        qc.append(sub_inst, rest + init)
+        return qc
+        # return qc.compose(circuit, qubits=qr1)
 
 
+# #%%
+
+# qr_test = QuantumRegister(5, name="qr_test3")
+# cr_test = ClassicalRegister(4, name="cr_test3")
+# qc_test = QuantumCircuit(qr_test) #,cr_test)
+# qc_test.barrier()
+# qc_test.h(0)
+# qc_test.h(1)
+# qc_test.h(2)
+# qc_test.barrier()
+# # qc_test.measure(qr_test[2],cr_test[3])
+# qc_test.draw('mpl')
 
 
+# #%%
 
+# S1 = [(0,0,1,1),(0,1,1,0), (1,1,0,0), (1,0,0,1), (1,0,1,0)]
 
+# qc = initialize_projector(S1, circuit=qc_test, initialization_qubits=None, circuit_name='test_circuit')
+# qc.add_register(ClassicalRegister(4, name="cr_test3"))
+# qc.measure(qc.qubits[0],3)
+# qc.draw('mpl')
 
+# #%%
 
+# print(qc.qregs)
 
+# #%%
+# import qiskit
+
+# aa = qiskit.circuit.Qubit(QuantumRegister(1, 'anr'),0)
+# #%%
+
+# a = {1,4,3}
+# b = {5,6,2}
+# print(a.union(b) )
