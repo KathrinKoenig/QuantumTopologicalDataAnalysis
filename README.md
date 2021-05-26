@@ -11,8 +11,6 @@ We implement a topological algorithm (https://arxiv.org/abs/1408.3106) on Qiskit
 As an example TDA is applied to a simple point cloud as shown below.
 <img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/119681678-91e8bc80-be42-11eb-8af8-c75030be022f.png">
 
-On this point cloud a filtration is done by expanding spheres with radius ε.
+On this point cloud a filtration is done by expanding spheres with radius ε. Points are connected for overlapping spheres. This changes the topology of the data. A simplicial complex is used to represent the topological characteristics of objects. Examples of k-dimensional simplices are: 0 simplex: vertex (point), 1-simplex:edges, 2-simplices are triangles, etc.
 
-Points are connected for overlapping spheres.
-
-This changes the topology of the data.
+To distinguish topoligical spaces based on the connecitvity of k-dimensional simplicial complexes, Betti numbers are used
