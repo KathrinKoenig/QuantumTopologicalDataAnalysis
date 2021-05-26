@@ -9,7 +9,7 @@ We implement a topological algorithm (https://arxiv.org/abs/1408.3106) on Qiskit
 
 ## How does TDA work?
 As an example TDA is applied to a simple point cloud as shown below.
-<img width=500 src="https://user-images.githubusercontent.com/67575757/119681678-91e8bc80-be42-11eb-8af8-c75030be022f.png">
+<img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/119681678-91e8bc80-be42-11eb-8af8-c75030be022f.png">
 
 On this point cloud a filtration is done by expanding spheres with radius ε.
 
