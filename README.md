@@ -5,4 +5,4 @@ Topological and geometric features of data are of increasing interest in data an
 
 We implement a topological algorithm (https://arxiv.org/abs/1408.3106) on Qiskit to calculate persistent spectra (and from it Betti numbers) of simplicial complexes representing arbitrary (high-dimensional) data. The algorithm builds on the phase estimation algorithm. After successful implementation we apply the algorithm to real datasets on IBM quantum backends. 
 
-<img width=500 src="https://user-images.githubusercontent.com/67575757/116424254-a769c700-a841-11eb-8737-b1b1ff9a4053.jpg">
+<img width=500 src="https://user-images.githubusercontent.com/67575757/119673446-a4abc300-be3b-11eb-9e98-e7a26e5fc358.png">
