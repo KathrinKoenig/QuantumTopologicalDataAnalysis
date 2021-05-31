@@ -93,28 +93,76 @@ def projected_combinatorial_laplacian(n_vertices, k, state_dict):
     delta_k = boundary_operator_crsmat_k(n_vertices, k) @ P_k
     delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1) @ P_kp1
     return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T 
-  
-# #%%
 
-# print(combinatorial_laplacian(3, 1).toarray())
+#%%
 
-# state_k = [(0,1,1), (1,1,0), (1,0,1)]
-# state_kp1 = [(1,1,1)]
+# two connected components -------------------
 
-# state_dict = {1: [(0,1,1), (1,1,0), (1,0,1)], 2: [(1,1,1)]}
+from scipy import linalg
 
-# mat = projected_combinatorial_laplacian(3, 1, state_dict).toarray()
+
+S0 = [(0,0,1),(0,1,0),(1,0,0)]
+S1 = [(0,1,1)]
+# S1 = [(0,1,1), (1,1,0),(1,0,1)]
+S2 = []
+# S2 = [(1,1,1)]
+S3 = []
+
+state_dict = {0: S0, 1: S1, 2: S2, 3: S3, 4: []}
+
+mat = projected_combinatorial_laplacian(3, 0, state_dict).toarray()
+print(mat)
+
+
+U = np.array(linalg.eig(mat)[1])
+
+print(np.diagonal(U.T @ mat @ U))    
+
+#%%
+
+# 2 - simplex -------------------
+
+from scipy import linalg
+
+
+S0 = [(0,0,1),(0,1,0),(1,0,0)]
+S1 = [(0,1,1), (1,1,0), (1,0,1)]
+# S2 = []
+S2 = [(1,1,1)]
+S3 = []
+
+state_dict = {0: S0, 1: S1, 2: S2, 3: S3, 4: []}
+
+mat = projected_combinatorial_laplacian(3, 1, state_dict).toarray()
 # print(mat)
 
-# #%%
-# from scipy import linalg
-# U = np.array(linalg.eig(mat)[1])
 
-# print(U)
+U = np.array(linalg.eig(mat)[1])
 
-# print(np.diagonal(U.T @ mat @ U))
+print(np.diagonal(U.T @ mat @ U))
 
-# #%%
+#%%
+
+# 3- simplex -------------------
+
+S0 = [(0,0,0,1),(0,0,1,0),(0,1,0,0),(1,0,0,0)]
+S1 = [(0,0,1,1),(0,1,1,0),(1,1,0,0),(1,0,0,1),(1,0,1,0),(0,1,0,1)]
+S2 = [(0,1,1,1),(1,0,1,1),(1,1,0,1),(1,1,1,0)]
+# S3 = [(1,1,1,1)]
+S3 = []
+S4 = []
+
+state_dict = {0: S0, 1: S1, 2: S2, 3: S3, 4: S4}
+
+mat = projected_combinatorial_laplacian(4, 1, state_dict).toarray()
+print(mat)
+
+
+U = np.array(linalg.eig(mat)[1])
+
+print(np.diagonal(U.T @ mat @ U))
+
+#%%
 
 
 def initialize_projector(state, circuit=None, initialization_qubits=None, circuit_name=None):
