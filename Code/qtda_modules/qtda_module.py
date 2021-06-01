@@ -233,12 +233,28 @@ def simplices_to_states(test_list, n_vertices):
     return arr
 
 class data_filtration:
-    def __init__(self, data, max_dimension, max_edge_length):
-        self.skeleton = gd.RipsComplex(points = data, max_edge_length = max_edge_length)
-        self.Rips_simplex_tree_sample = self.skeleton.create_simplex_tree(max_dimension = max_dimension)
-        self.num_vertices = self.Rips_simplex_tree_sample.num_vertices()
-        self.num_simplices = self.Rips_simplex_tree_sample.num_simplices()
-        self.filtration = list(self.Rips_simplex_tree_sample.get_filtration())
+    def __init__(self, data=None, distance_matrix=None, max_dimension=None, max_edge_length=None):
+        '''
+        data: point data given by (number_data_points x dim_points)-numpy-array
+        distance_matrix: (n x n)-numpy-array describing the pair-wise distances of n data points
+        
+        Either one of them has to be given!
+        '''
+        
+        if data is not None:
+            self.skeleton = gd.RipsComplex(points = data, max_edge_length = max_edge_length)
+        elif distance_matrix is not None:
+            self.skeleton = gd.RipsComplex(
+                distance_matrix = distance_matrix, 
+                max_edge_length = max_edge_length
+                )
+        else:
+            print('Either point data or distance matrix has to be provided!')
+            
+        self.Rips_simplex_tree = self.skeleton.create_simplex_tree(max_dimension = max_dimension)
+        self.num_vertices = self.Rips_simplex_tree.num_vertices()
+        self.num_simplices = self.Rips_simplex_tree.num_simplices()
+        self.filtration = list(self.Rips_simplex_tree.get_filtration())
     
     def get_filtration_states(self, epsilons=None):
         if epsilons == None:
@@ -246,8 +262,12 @@ class data_filtration:
         filt_dict = {}
         for eps in epsilons:
             helper_list = [x[0] for x in self.filtration if x[1] <= eps]
-            filt_dict[eps] = simplices_to_states(helper_list, 4)
+            filt_dict[eps] = simplices_to_states(helper_list, self.num_vertices)
         return filt_dict
+    
+    def plot_persistence_diagram(self):
+        BarCodes = self.Rips_simplex_tree.persistence()
+        gd.plot_persistence_diagram(BarCodes, legend=True)
 
 class QTDA_algorithm(QuantumCircuit):
     def __init__(self, num_eval_qubits, top_order, state_dict, name='QTDA'):
@@ -284,24 +304,34 @@ from qiskit import IBMQ, Aer, transpile, assemble
 from qiskit import execute
 
 class Q_persistent_top_spectra:
-    def __init__(self, data, max_dimension, max_edge_length, num_eval_qubits, shots=1000, epsilons=None):
-        # da_fil = data_filtration(data, max_dimension, max_edge_length)
-        self.filt_dict = data_filtration(data, max_dimension, max_edge_length).get_filtration_states(epsilons=epsilons)
+    def __init__(self, data=None, distance_matrix=None, max_dimension=None, max_edge_length=None, num_eval_qubits=6, shots=1000, epsilons=None):
+        '''
+        data: point data given by (number_data_points x dim_points)-numpy-array
+        distance_matrix: (n x n)-numpy-array describing the pair-wise distances of n data points
         
+        Either one of them has to be given!
+        '''
+        self.shots = shots
+        self.filt_dict = data_filtration(
+            data=data, 
+            distance_matrix=distance_matrix,
+            max_dimension=max_dimension, 
+            max_edge_length=max_edge_length
+            ).get_filtration_states(epsilons=epsilons)
         self.state_dict = {}
-        for key in self.filt_dict.keys():
+        for key in sorted(self.filt_dict.keys()):
             self.state_dict[key] = {}
             for k in range(1,max_dimension+1):
                 mask = np.sum(self.filt_dict[key],axis=1) == k
                 self.state_dict[key][k-1] = [tuple(s) for s in self.filt_dict[key][mask, :]]
             self.state_dict[key][max_dimension] = [] # an empty state has to be included on order max_dimension for consistency 
         
-        self.count_data = {}
+        self.counts = {}
         for eps in self.state_dict.keys():
             print()
             print('Filtration scale: ', eps)
             print()
-            self.count_data[eps] = {}
+            self.counts[eps] = {}
             for top_order in self.state_dict[eps].keys():
                 print('Topological order: ', top_order)
                 if (len(self.state_dict[eps][top_order])==0):
@@ -321,12 +351,59 @@ class Q_persistent_top_spectra:
                 
                 t = time.time()
                 
-                job = execute(qc, backend, shots=shots)
-                self.count_data[eps][top_order] = job.result().get_counts(qc)
+                job = execute(qc, backend, shots=self.shots)
+                self.counts[eps][top_order] = job.result().get_counts(qc)
                 print(time.time() - t)
+    
+    def get_counts(self):
+        return self.counts
+    
+    def get_eigenvalues(self, chop=None):
+        '''
+        defaul chop: eigenvalues with less then 2% of all shots are regarded as noise (can be adjusted)
+        exception: the eigenspace of eigenvalue 0 is important, even if it is 0-dimensional; hence, this is always included
+        '''
+        if chop == None:
+            chop = self.shots/50
+            
+        eigenvalue_dict = {}
+        for eps in self.counts.keys():
+            eigenvalue_dict[eps] = {}
+            for top_order in self.counts[eps].keys():
+                eigenvalue_dict[eps][top_order] = {}
+                eigenvalue_dict[eps][top_order][0.0] = 0
+                vals = np.fromiter(self.counts[eps][top_order].values(), dtype=float)
+                keys = list(self.counts[eps][top_order].keys())
+                indices = np.where(vals >= chop)
+                new_vals = vals[indices]
+                new_keys = [keys[i] for i in indices[0]]                
+                for i in range(len(new_keys)):
+                    eigenvalue_dict[eps][top_order][2*np.pi*int(new_keys[i], 2)/int(len(new_keys[i])*'1',2)] = (
+                        new_vals[i] * len(self.state_dict[eps][top_order])/self.shots
+                        )
+        
+        return eigenvalue_dict
                 
-        
-        
+    
+# #%%
+
+# d = {}
+# d[0.] = 1
+# d[1] = 2
+# d[0.] = 6
+# d[0.5] = 2
+
+# e = {k: k for k in range(4)}
+
+
+# print(0.1 not in d.keys())
+
+# #%%
+# st = '0000'
+
+# print(int(st, 2)/int(len(st)*'1',2))
+
+# #%%
 # #%%
 
 # test_sample = np.array([
@@ -336,8 +413,10 @@ class Q_persistent_top_spectra:
 #     [0.,1.]
 #     ])
 
-# df = data_filtration(test_sample, max_dimension=4, max_edge_length=2)
+# df = data_filtration(data=test_sample, max_dimension=4, max_edge_length=2)
 
+# df.plot_persistence_diagram()
+# #%%
 # # a = df.filtration
 # # print(list(a))
 # aa = (df.get_filtration_states([0.1, 1.1, 1.5]))
@@ -350,15 +429,13 @@ class Q_persistent_top_spectra:
 
 # #%%
 
-# b = Q_persistent_top_spectra(test_sample, max_dimension=4, max_edge_length=2, num_eval_qubits=2, epsilons=[0.1, 1.1, 1.5])
+# b = Q_persistent_top_spectra(data=test_sample, max_dimension=4, max_edge_length=2, num_eval_qubits=2, epsilons=[0.1, 1.1, 1.5])
 
 # #%%
 # print(b[1.1])
 
-
-# #%%      
         
-#%%
+# #%%
 
 # n_vertices = 3
 # S0 = [(0,0,1),(0,1,0), (1,0,0)]
