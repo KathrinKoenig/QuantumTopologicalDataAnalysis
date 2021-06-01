@@ -262,34 +262,12 @@ class QTDA_algorithm(QuantumCircuit):
         unitary = expm(
             1j*projected_combinatorial_laplacian(n_vertices, top_order, state_dict).toarray()
             )
-        
         gate = UnitaryGate(unitary)
         qpe = PhaseEstimation(num_eval_qubits, unitary=gate, iqft=None, name='QPE')
-
-        # qc = initialize_projector(
-        #     state_dict[top_order],
-        #     circuit=qpe,
-        #     initialization_qubits=list(range(num_eval_qubits, num_eval_qubits + n_vertices)),
-        #     circuit_name='        QPE        '
-        #     )
+        sub_inst = qpe.to_instruction()
+        sub_inst.name = '        QPE        '
         
-        circuit = qpe
-        state = state_dict[top_order]
-        initialization_qubits=list(range(num_eval_qubits, num_eval_qubits + n_vertices))
-        circuit_name='        QPE        '
-        
-        n_vertices = len(state[0])
-        
-        # qr1 = QuantumRegister(n_vertices, name="state_reg")
-        # copy_reg = QuantumRegister(n_vertices, name="copy_reg")
-        # # clr = ClassicalRegister(circuit.num_clbits, name="cr")
-        # if circuit.num_qubits - n_vertices > 0:
-        #     anr = QuantumRegister(circuit.num_qubits - n_vertices, name="an_reg")
-        #     qc = QuantumCircuit(anr, qr1, copy_reg) #, clr)
-        # else:
-        #     qc = QuantumCircuit(qr1, copy_reg) #, clr)
-        
-        state_vec = state_to_vec(state)
+        state_vec = state_to_vec(state_dict[top_order])
         state_vec = state_vec/np.linalg.norm(state_vec)
         self.initialize(state_vec, qr_state)
         
@@ -298,35 +276,55 @@ class QTDA_algorithm(QuantumCircuit):
             self.cx(qr_state[k], qr_copy[k])
         self.barrier()
         
-        if initialization_qubits == None:
-            init = list(range(n_vertices))
-        else:
-            init = initialization_qubits
-        rest = list(set(range(circuit.num_qubits)) - set(init))
-        
-        sub_inst = circuit.to_instruction()
-        # sub_inst = circuit.to_gate()
-        if circuit_name != None:
-            sub_inst.name = circuit_name
-        self.append(sub_inst, rest + init)
-            
-        # self.helper = qc
+        self.append(sub_inst, list(range(num_eval_qubits + n_vertices)))
         self.eval_qubits = list(range(num_eval_qubits))
-        # self.append(qc, self.qubits)
 
-def Q_persistent_top_spectra(data, max_dimension, max_edge_length, num_eval_qubits, epsilons=None):
-        da_fil = data_filtration(data, max_dimension, max_edge_length)
-        filt_dict = da_fil.get_filtration_states(epsilons=epsilons)
+import time
+from qiskit import IBMQ, Aer, transpile, assemble
+from qiskit import execute
+
+class Q_persistent_top_spectra:
+    def __init__(self, data, max_dimension, max_edge_length, num_eval_qubits, shots=1000, epsilons=None):
+        # da_fil = data_filtration(data, max_dimension, max_edge_length)
+        self.filt_dict = data_filtration(data, max_dimension, max_edge_length).get_filtration_states(epsilons=epsilons)
         
-        state_dict = {}
-        for key in filt_dict.keys():
-            state_dict[key] = {}
+        self.state_dict = {}
+        for key in self.filt_dict.keys():
+            self.state_dict[key] = {}
             for k in range(1,max_dimension+1):
-                mask = np.sum(filt_dict[key],axis=1) == k
-                state_dict[key][k] = filt_dict[key][mask, :]
+                mask = np.sum(self.filt_dict[key],axis=1) == k
+                self.state_dict[key][k-1] = [tuple(s) for s in self.filt_dict[key][mask, :]]
+            self.state_dict[key][max_dimension] = [] # an empty state has to be included on order max_dimension for consistency 
         
-        # self.q_circuit = QTDA_algorithm(num_eval_qubits, top_order, state_dict)
-        return state_dict
+        self.count_data = {}
+        for eps in self.state_dict.keys():
+            print()
+            print('Filtration scale: ', eps)
+            print()
+            self.count_data[eps] = {}
+            for top_order in self.state_dict[eps].keys():
+                print('Topological order: ', top_order)
+                if (len(self.state_dict[eps][top_order])==0):
+                    print("calculation terminated because no simplex of size ...")
+                    break
+                t = time.time()
+                
+                qc = QTDA_algorithm(num_eval_qubits, top_order, self.state_dict[eps])
+                
+                print(time.time() - t)
+                
+                qc.add_register(ClassicalRegister(num_eval_qubits, name="phase"))
+                for q in qc.eval_qubits:
+                    qc.measure(q,q)
+                
+                backend = Aer.get_backend('qasm_simulator')
+                
+                t = time.time()
+                
+                job = execute(qc, backend, shots=shots)
+                self.count_data[eps][top_order] = job.result().get_counts(qc)
+                print(time.time() - t)
+                
         
         
 # #%%
@@ -335,7 +333,7 @@ def Q_persistent_top_spectra(data, max_dimension, max_edge_length, num_eval_qubi
 #     [0.,0.],
 #     [1.,0.],
 #     [1.,1.],
-#     [1.,0.]
+#     [0.,1.]
 #     ])
 
 # df = data_filtration(test_sample, max_dimension=4, max_edge_length=2)
@@ -345,16 +343,22 @@ def Q_persistent_top_spectra(data, max_dimension, max_edge_length, num_eval_qubi
 # aa = (df.get_filtration_states([0.1, 1.1, 1.5]))
 # aaa = (df.get_filtration_states())
 
+# #%%
+# print(aa[1.5])
+# print()
+# print(aa[1.5][1])
+
+# #%%
+
 # b = Q_persistent_top_spectra(test_sample, max_dimension=4, max_edge_length=2, num_eval_qubits=2, epsilons=[0.1, 1.1, 1.5])
 
 # #%%
-# print(b[0.1])
+# print(b[1.1])
 
-# print(aa[0.1])
-# print(aaa[0])
+
 # #%%      
         
-# #%%
+#%%
 
 # n_vertices = 3
 # S0 = [(0,0,1),(0,1,0), (1,0,0)]
