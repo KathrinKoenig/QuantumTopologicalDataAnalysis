@@ -14,7 +14,7 @@ The folder `presentation/` contains a short video presentation of the QTDA imple
 
 ## How does TDA work?
 As an example TDA is applied to a simple point cloud as shown on the left.
-<img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/120469267-6ade3d80-c3a2-11eb-8480-0d11d8e2016f.png">
+<img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/120490836-067aa880-c3b9-11eb-8d64-4059180169e1.png">
 
 On this point cloud a filtration is done by expanding spheres with radius ε. Points are connected for overlapping spheres. This changes the topology of the data. A simplicial complex is used to represent the topological characteristics of objects. Examples of k-dimensional simplices are: 0 simplex: vertex (point), 1-simplex:edges, 2-simplices are triangles, etc.
 
