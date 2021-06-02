@@ -7,6 +7,9 @@ We implement a topological algorithm (https://arxiv.org/abs/1408.3106) on Qiskit
 
 <img width=500 src="https://user-images.githubusercontent.com/67575757/119673446-a4abc300-be3b-11eb-9e98-e7a26e5fc358.png">
 
+## Describe repo
+jojo
+g
 ## How does TDA work?
 As an example TDA is applied to a simple point cloud as shown below.
 <img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/119681678-91e8bc80-be42-11eb-8af8-c75030be022f.png">
