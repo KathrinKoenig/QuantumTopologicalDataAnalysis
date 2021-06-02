@@ -25,4 +25,4 @@ A detailed description can be found in the explanatory notebook.
 
 ### Authors
 
-Kathrin König (kathrin.koenig@iaf.fraunhofer.de), Andreas Woitzik (andreas.woitzik@physik.uni-freiburg.de), Eric Brunner (eric.brunner@physik.uni-freiburg.de)
+Kathrin König (kathrin.koenig@iaf.fraunhofer.de), Andreas Woitzik (andreas.woitzik@physik.uni-freiburg.de), Eric Brunner (nephts) (eric.brunner@physik.uni-freiburg.de)
