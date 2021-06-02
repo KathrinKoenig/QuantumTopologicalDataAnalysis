@@ -275,38 +275,38 @@ class data_filtration:
 
 
 
-# import scipy
-# import math
-# import qiskit
+import scipy
+import math
+import qiskit
 
-# def controledU(U, qc, num_qubits, n_vertices):#, k, state_dict):
-#     unit = U
-# #     unit = scipy.linalg.expm(1j*qtda.projected_combinatorial_laplacian(n_vertices, k, state_dict).toarray())
-#     gate = qiskit.extensions.UnitaryGate(unit)
-#     for counting_qubit in range(num_qubits):
-#         qc.append(gate.control(1), [counting_qubit] + list(range(num_qubits,num_qubits+n_vertices)))
-#         unit = unit@unit
-#         gate = gate = qiskit.extensions.UnitaryGate(unit)
-#     return qc
+def controledU(U, qc, num_qubits, n_vertices):#, k, state_dict):
+    unit = U
+#     unit = scipy.linalg.expm(1j*qtda.projected_combinatorial_laplacian(n_vertices, k, state_dict).toarray())
+    gate = qiskit.extensions.UnitaryGate(unit)
+    for counting_qubit in range(num_qubits):
+        qc.append(gate.control(1), [counting_qubit] + list(range(num_qubits,num_qubits+n_vertices)))
+        unit = unit@unit
+        gate = gate = qiskit.extensions.UnitaryGate(unit)
+    return qc
 
-# def qft_dagger(qc, n):
-#     """n-qubit QFTdagger the first n qubits in circ"""
-#     # Don't forget the Swaps!
-#     for qubit in range(n//2):
-#         qc.swap(qubit, n-qubit-1)
-#     for j in range(n):
-#         for m in range(j):
-#             qc.cp(-math.pi/float(2**(j-m)), m, j)
-#         qc.h(j)
+def qft_dagger(qc, n):
+    """n-qubit QFTdagger the first n qubits in circ"""
+    # Don't forget the Swaps!
+    for qubit in range(n//2):
+        qc.swap(qubit, n-qubit-1)
+    for j in range(n):
+        for m in range(j):
+            qc.cp(-math.pi/float(2**(j-m)), m, j)
+        qc.h(j)
         
-# def qpe_total(num_qubits, n_vertices, unitary): #, k, state_dict):
-#     qc = QuantumCircuit(num_qubits + n_vertices)
-#     for qubit in range(num_qubits):
-#         qc.h(qubit)
-#     controledU(unitary, qc, num_qubits, n_vertices) #, k, state_dict)
-#     # Apply inverse QFT
-#     qft_dagger(qc, num_qubits)
-#     return qc
+def qpe_total(num_qubits, n_vertices, unitary): #, k, state_dict):
+    qc = QuantumCircuit(num_qubits + n_vertices)
+    for qubit in range(num_qubits):
+        qc.h(qubit)
+    controledU(unitary, qc, num_qubits, n_vertices) #, k, state_dict)
+    # Apply inverse QFT
+    qft_dagger(qc, num_qubits)
+    return qc
 
 
 
@@ -346,8 +346,9 @@ class QTDA_algorithm(QuantumCircuit):
         unitary = expm(
             1j*projected_combinatorial_laplacian(n_vertices, top_order, state_dict).toarray()
             )
-        gate = UnitaryGate(unitary)
-        qpe = PhaseEstimation(num_eval_qubits, unitary=gate, iqft=None, name='QPE')
+        # gate = UnitaryGate(unitary)
+        # qpe = PhaseEstimation(num_eval_qubits, unitary=gate, iqft=None, name='QPE')
+        qpe = qpe_total(num_eval_qubits, n_vertices, unitary)
         
         sub_inst = qpe.to_instruction()
         sub_inst.name = '        QPE        '
