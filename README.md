@@ -8,8 +8,8 @@ We implement a topological algorithm (https://arxiv.org/abs/1408.3106) on Qiskit
 <img width=500 src="https://user-images.githubusercontent.com/67575757/119673446-a4abc300-be3b-11eb-9e98-e7a26e5fc358.png">
 
 ## Describe repo
-jojo
-g
+The implementation of the algorithm can be found in Code/. The base file Code/qtda_module.py contains basic functions and classes to define the quantum circuit and analyse data filtrations. The quantum algorithm side is based on the `IBM Qiskit` library, while the library `gudhi` (add links????) is used as a base implementation of (classical) topological data analysis. Several **Jupyter-notebooks** are provided (how many??) to explain the basic functionalities of the `QTDA`-implementation and the topological algorithm.
+
 ## How does TDA work?
 As an example TDA is applied to a simple point cloud as shown below.
 <img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/119681678-91e8bc80-be42-11eb-8af8-c75030be022f.png">
