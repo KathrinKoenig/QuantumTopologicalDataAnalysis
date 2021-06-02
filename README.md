@@ -21,7 +21,7 @@ On this point cloud a filtration is done by expanding spheres with radius ε. Po
 To distinguish topoligical spaces based on the connecitvity of k-dimensional simplicial complexes, Betti numbers are used.
 We implemented an algorithm on IBM's quantum computeres to find these Betti numbers.
 
-A detailed destricttion can be found in the explanatory notebook.
+A detailed description can be found in the explanatory notebook.
 
 ### Authors
 
