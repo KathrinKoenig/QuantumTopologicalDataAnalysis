@@ -13,12 +13,15 @@ The implementation of the algorithm can be found in `Code/`. The base file `Code
 The folder `presentation/` contains a short video presentation of the QTDA implementation, as well as a scientific report describing main goals and results.
 
 ## How does TDA work?
-As an example TDA is applied to a simple point cloud as shown below.
-<img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/119681678-91e8bc80-be42-11eb-8af8-c75030be022f.png">
+As an example TDA is applied to a simple point cloud as shown on the left.
+<img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/120495928-6d9a5c00-c3bd-11eb-9dd7-bd660139f6f1.png">
 
 On this point cloud a filtration is done by expanding spheres with radius ε. Points are connected for overlapping spheres. This changes the topology of the data. A simplicial complex is used to represent the topological characteristics of objects. Examples of k-dimensional simplices are: 0 simplex: vertex (point), 1-simplex:edges, 2-simplices are triangles, etc.
 
-To distinguish topoligical spaces based on the connecitvity of k-dimensional simplicial complexes, Betti numbers are used
+To distinguish topoligical spaces based on the connecitvity of k-dimensional simplicial complexes, Betti numbers are used.
+We implemented an algorithm on IBM's quantum computeres to find these Betti numbers.
+
+A detailed destricttion can be found in the explanatory notebook.
 
 ### Authors
 
