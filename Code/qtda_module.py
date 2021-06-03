@@ -185,10 +185,10 @@ def initialize_projector(state, circuit=None, initialization_qubits=None, circui
         state_vec = state_to_vec(state)
         state_vec = state_vec/np.linalg.norm(state_vec)
         qc.initialize(state_vec, qr1)
-        qc.barrier()
+        # qc.barrier()
         for k in range(n_vertices):
             qc.cx(qr1[k],copy_reg[k])
-        qc.barrier()
+        # qc.barrier()
         return qc
     else:
         n_vertices = len(state[0])
@@ -204,10 +204,10 @@ def initialize_projector(state, circuit=None, initialization_qubits=None, circui
         state_vec = state_to_vec(state)
         state_vec = state_vec/np.linalg.norm(state_vec)
         qc.initialize(state_vec, qr1)
-        qc.barrier()
+        # qc.barrier()
         for k in range(n_vertices):
             qc.cx(qr1[k],copy_reg[k])
-        qc.barrier()
+        # qc.barrier()
         
         if initialization_qubits == None:
             init = list(range(n_vertices))
@@ -357,10 +357,10 @@ class QTDA_algorithm(QuantumCircuit):
         state_vec = state_vec/np.linalg.norm(state_vec)
         self.initialize(state_vec, qr_state)
         
-        self.barrier()
+        # self.barrier()
         for k in range(n_vertices):
             self.cx(qr_state[k], qr_copy[k])
-        self.barrier()
+        # self.barrier()
         
         self.append(sub_inst, list(range(num_eval_qubits + n_vertices)))
         self.eval_qubits = list(range(num_eval_qubits))
