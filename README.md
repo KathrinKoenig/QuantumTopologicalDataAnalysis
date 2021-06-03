@@ -17,7 +17,9 @@ As an example TDA is applied to a simple point cloud as shown on the left.
 <img width=300 align="left" src="https://user-images.githubusercontent.com/67575757/120495928-6d9a5c00-c3bd-11eb-9dd7-bd660139f6f1.png">
 
 On this point cloud a filtration is done by expanding spheres with radius ε. Points are connected for overlapping spheres. This changes the topology of the data. A simplicial complex is used to represent the topological characteristics of objects. Examples of k-dimensional simplices are: 0 simplex: vertex (point), 1-simplex:edges, 2-simplices are triangles, etc.
-<img width=300  src="https://user-images.githubusercontent.com/67575757/120644603-cf1f0100-c477-11eb-97df-68fe2d9dc6fe.png">
+
+<img width=300 align="center" src="https://user-images.githubusercontent.com/67575757/120644603-cf1f0100-c477-11eb-97df-68fe2d9dc6fe.png">
+
 To distinguish topoligical spaces based on the connecitvity of k-dimensional simplicial complexes, Betti numbers are used.
 We implemented an algorithm on IBM's quantum computers to find these Betti numbers.
 
