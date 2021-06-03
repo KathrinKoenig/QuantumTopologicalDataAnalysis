@@ -10,7 +10,6 @@ import numpy as np
 import gudhi as gd
 import itertools as it
 from scipy.sparse import csr_matrix
-import math
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 from scipy.linalg import expm
 from qiskit.circuit.library import PhaseEstimation
@@ -228,7 +227,7 @@ def qft_dagger(qc, n):
         qc.swap(qubit, n-qubit-1)
     for j in range(n):
         for m in range(j):
-            qc.cp(-math.pi/float(2**(j-m)), m, j)
+            qc.cp(-np.pi/float(2**(j-m)), m, j)
         qc.h(j)
         
 def qpe_total(num_eval_qubits, n_vertices, unitary): #, k, state_dict):
