@@ -1,5 +1,7 @@
 # Quantum Topological Data Analysis <img width=300 align="right" src="https://user-images.githubusercontent.com/67575757/116423376-eba89780-a840-11eb-843d-00e75ad735bc.jpg">
-Kathrin König (kathrin.koenig@iaf.fraunhofer.de), Andreas Woitzik (andreas.woitzik@physik.uni-freiburg.de), Eric Brunner (nephts) (eric.brunner@physik.uni-freiburg.de)
+Kathrin König (kathrin.koenig@iaf.fraunhofer.de)
+Andreas Woitzik (andreas.woitzik@physik.uni-freiburg.de)
+Eric Brunner (nephts) (eric.brunner@physik.uni-freiburg.de)
 
 Implementation of a quantum algorithm to compute topological features of generic (high-dimensional) data clouds in Qiskit.
 
