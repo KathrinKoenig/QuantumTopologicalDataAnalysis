@@ -7,12 +7,16 @@ Created on Mon May 24 11:04:02 2021
 """
 
 import numpy as np
+import gudhi as gd  
 import itertools as it
 from scipy.sparse import csr_matrix
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, AncillaRegister
+import math
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 from scipy.linalg import expm
-from qiskit.extensions import UnitaryGate
 from qiskit.circuit.library import PhaseEstimation
+from qiskit.extensions import UnitaryGate
+from qiskit import Aer
+from qiskit import execute
 
 
 def vec_to_state(vec):
@@ -99,79 +103,6 @@ def projected_combinatorial_laplacian(n_vertices, k, state_dict):
 
 
 
-
-
-# #%%
-
-# # two connected components -------------------
-
-# from scipy import linalg
-
-
-# S0 = [(0,0,1),(0,1,0),(1,0,0)]
-# S1 = [(0,1,1)]
-# # S1 = [(0,1,1), (1,1,0),(1,0,1)]
-# S2 = []
-# # S2 = [(1,1,1)]
-# S3 = []
-
-# state_dict = {0: S0, 1: S1, 2: S2, 3: S3, 4: []}
-
-# mat = projected_combinatorial_laplacian(3, 0, state_dict).toarray()
-# print(mat)
-
-
-# U = np.array(linalg.eig(mat)[1])
-
-# print(np.diagonal(U.T @ mat @ U))    
-
-# #%%
-
-# # 2 - simplex -------------------
-
-# from scipy import linalg
-
-
-# S0 = [(0,0,1),(0,1,0),(1,0,0)]
-# S1 = [(0,1,1), (1,1,0), (1,0,1)]
-# # S2 = []
-# S2 = [(1,1,1)]
-# S3 = []
-
-# state_dict = {0: S0, 1: S1, 2: S2, 3: S3, 4: []}
-
-# mat = projected_combinatorial_laplacian(3, 1, state_dict).toarray()
-# # print(mat)
-
-
-# U = np.array(linalg.eig(mat)[1])
-
-# print(np.diagonal(U.T @ mat @ U))
-
-# #%%
-
-# # 3- simplex -------------------
-
-# S0 = [(0,0,0,1),(0,0,1,0),(0,1,0,0),(1,0,0,0)]
-# S1 = [(0,0,1,1),(0,1,1,0),(1,1,0,0),(1,0,0,1),(1,0,1,0),(0,1,0,1)]
-# S2 = [(0,1,1,1),(1,0,1,1),(1,1,0,1),(1,1,1,0)]
-# # S3 = [(1,1,1,1)]
-# S3 = []
-# S4 = []
-
-# state_dict = {0: S0, 1: S1, 2: S2, 3: S3, 4: S4}
-
-# mat = projected_combinatorial_laplacian(4, 1, state_dict).toarray()
-# print(mat)
-
-
-# U = np.array(linalg.eig(mat)[1])
-
-# print(np.diagonal(U.T @ mat @ U))
-
-# #%%
-
-
 def initialize_projector(state, circuit=None, initialization_qubits=None, circuit_name=None):
     '''initializes projector onto subspace spanned by list of states'''
     '''input circuit has to have classical register'''
@@ -194,7 +125,6 @@ def initialize_projector(state, circuit=None, initialization_qubits=None, circui
         n_vertices = len(state[0])
         qr1 = QuantumRegister(n_vertices, name="state_reg")
         copy_reg = QuantumRegister(n_vertices, name="copy_reg")
-        # clr = ClassicalRegister(circuit.num_clbits, name="cr")
         if circuit.num_qubits - n_vertices > 0:
             anr = QuantumRegister(circuit.num_qubits - n_vertices, name="an_reg")
             qc = QuantumCircuit(anr, qr1, copy_reg) #, clr)
@@ -216,14 +146,13 @@ def initialize_projector(state, circuit=None, initialization_qubits=None, circui
         rest = list(set(range(circuit.num_qubits)) - set(init))
         
         sub_inst = circuit.to_instruction()
-        # sub_inst = circuit.to_gate()
         if circuit_name != None:
             sub_inst.name = circuit_name
         qc.append(sub_inst, rest + init)
         return qc
 
 
-import gudhi as gd  
+
 
 def simplices_to_states(test_list, n_vertices):
     n_states = len(test_list)
@@ -275,18 +204,16 @@ class data_filtration:
 
 
 
-import scipy
-import math
-import qiskit
 
-def controledU(U, qc, num_qubits, n_vertices):#, k, state_dict):
+
+def controledU(U, qc, num_eval_qubits, n_vertices):#, k, state_dict):
     unit = U
 #     unit = scipy.linalg.expm(1j*qtda.projected_combinatorial_laplacian(n_vertices, k, state_dict).toarray())
-    gate = qiskit.extensions.UnitaryGate(unit)
-    for counting_qubit in range(num_qubits):
-        qc.append(gate.control(1), [counting_qubit] + list(range(num_qubits,num_qubits+n_vertices)))
+    gate = UnitaryGate(unit)
+    for counting_qubit in range(num_eval_qubits):
+        qc.append(gate.control(1), [counting_qubit] + list(range(num_eval_qubits,num_eval_qubits+n_vertices)))
         unit = unit@unit
-        gate = gate = qiskit.extensions.UnitaryGate(unit)
+        gate = UnitaryGate(unit)
     return qc
 
 def qft_dagger(qc, n):
@@ -299,38 +226,14 @@ def qft_dagger(qc, n):
             qc.cp(-math.pi/float(2**(j-m)), m, j)
         qc.h(j)
         
-def qpe_total(num_qubits, n_vertices, unitary): #, k, state_dict):
-    qc = QuantumCircuit(num_qubits + n_vertices)
-    for qubit in range(num_qubits):
+def qpe_total(num_eval_qubits, n_vertices, unitary): #, k, state_dict):
+    qc = QuantumCircuit(num_eval_qubits + n_vertices)
+    for qubit in range(num_eval_qubits):
         qc.h(qubit)
-    controledU(unitary, qc, num_qubits, n_vertices) #, k, state_dict)
+    controledU(unitary, qc, num_eval_qubits, n_vertices) #, k, state_dict)
     # Apply inverse QFT
-    qft_dagger(qc, num_qubits)
+    qft_dagger(qc, num_eval_qubits)
     return qc
-
-
-
-
-
-# n_vertices = 4
-# num_qubits = 5
-# k=1
-# shots = 2000
-
-# S0 = [(0,0,0,1),(0,0,1,0), (0,1,0,0),(1,0,0,0)]
-# S1 = [(0,0,1,1),(0,1,1,0),(1,1,0,0),(1,0,0,1),(1,0,1,0)]
-# S2 = []
-# S2 = [(1,0,1,1)]
-# S3 = []
-
-# state_dict = {0: S0, 1: S1, 2: S2, 3: S3}
-# unitary = scipy.linalg.expm(
-#     1j*projected_combinatorial_laplacian(n_vertices, k, state_dict).toarray()
-#     )
-
-# qpe = qpe_total(num_qubits, n_vertices, unitary)
-# qpe.draw('mpl')
-
 
 
 class QTDA_algorithm(QuantumCircuit):
@@ -346,6 +249,13 @@ class QTDA_algorithm(QuantumCircuit):
         unitary = expm(
             1j*projected_combinatorial_laplacian(n_vertices, top_order, state_dict).toarray()
             )
+        
+        '''
+        we can also directly use the PhaseEstimation routine from Qiskit, which, however,
+        leads to a larger circuit depth than our designed qpe_total implementation 
+        
+        '''
+        
         # gate = UnitaryGate(unitary)
         # qpe = PhaseEstimation(num_eval_qubits, unitary=gate, iqft=None, name='QPE')
         qpe = qpe_total(num_eval_qubits, n_vertices, unitary)
@@ -364,10 +274,6 @@ class QTDA_algorithm(QuantumCircuit):
         
         self.append(sub_inst, list(range(num_eval_qubits + n_vertices)))
         self.eval_qubits = list(range(num_eval_qubits))
-
-import time
-from qiskit import IBMQ, Aer, transpile, assemble
-from qiskit import execute
 
 class Q_top_spectra:
     def __init__(self, state_dict, num_eval_qubits=6, shots=1000):
@@ -454,23 +360,14 @@ class Q_persistent_top_spectra:
                 if (len(self.state_dict[eps][top_order])==0):
                     print("calculation terminated because no simplex of dimension %s" %(top_order))
                     break
-                t = time.time()
                 
                 qc = QTDA_algorithm(num_eval_qubits, top_order, self.state_dict[eps])
-                
-                print(time.time() - t)
-                
                 qc.add_register(ClassicalRegister(num_eval_qubits, name="phase"))
                 for q in qc.eval_qubits:
                     qc.measure(q,q)
-                
                 backend = Aer.get_backend('qasm_simulator')
-                
-                t = time.time()
-                
                 job = execute(qc, backend, shots=self.shots)
                 self.counts[eps][top_order] = job.result().get_counts(qc)
-                print(time.time() - t)
     
     def get_counts(self):
         return self.counts
@@ -502,91 +399,3 @@ class Q_persistent_top_spectra:
         return eigenvalue_dict
                 
     
-# #%%
-
-# d = {}
-# d[0.] = 1
-# d[1] = 2
-# d[0.] = 6
-# d[0.5] = 2
-
-# e = {k: k for k in range(4)}
-
-
-# print(0.1 not in d.keys())
-
-# #%%
-# st = '0000'
-
-# print(int(st, 2)/int(len(st)*'1',2))
-
-# #%%
-# #%%
-
-# test_sample = np.array([
-#     [0.,0.],
-#     [1.,0.],
-#     [1.,1.],
-#     [0.,1.]
-#     ])
-
-# df = data_filtration(data=test_sample, max_dimension=4, max_edge_length=2)
-
-# df.plot_persistence_diagram()
-# #%%
-# # a = df.filtration
-# # print(list(a))
-# aa = (df.get_filtration_states([0.1, 1.1, 1.5]))
-# aaa = (df.get_filtration_states())
-
-# #%%
-# print(aa[1.5])
-# print()
-# print(aa[1.5][1])
-
-# #%%
-
-# b = Q_persistent_top_spectra(data=test_sample, max_dimension=4, max_edge_length=2, num_eval_qubits=2, epsilons=[0.1, 1.1, 1.5])
-
-# #%%
-# print(b[1.1])
-
-        
-# #%%
-
-# n_vertices = 3
-# S0 = [(0,0,1),(0,1,0), (1,0,0)]
-# S_test = [(0,1,0,0),(0,0,1,1)]
-# S1 = [(0,1,1),(1,1,0),(1,0,1)]
-# S2 = []
-# #S2 = [(1,1,1)]
-# S3 = []
-
-# state_dict = {0: S0, 1: S1, 2: S2, 3: S3}
-
-# n_vertices = 3
-# S0 = [(0,0,1),(0,1,0), (1,0,0)]
-# S_test = [(0,1,0,0),(0,0,1,1)]
-# S1 = [(0,1,1),(1,1,0),(1,0,1)]
-# S2 = []
-# #S2 = [(1,1,1)]
-# S3 = []
-
-# state_dict = {0: S0, 1: S1, 2: S2, 3: S3}
-
-# qc = QTDA_algorithm(5, 1, state_dict)
-
-# #%%
-
-# a = qc.helper
-# print(a.qubits)
-# print()
-# print(a._qubits)
-
-# #%%
-
-
-
-
-
-
