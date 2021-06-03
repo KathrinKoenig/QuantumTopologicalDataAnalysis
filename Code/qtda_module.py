@@ -7,7 +7,7 @@ Created on Mon May 24 11:04:02 2021
 """
 
 import numpy as np
-import gudhi as gd  
+import gudhi as gd
 import itertools as it
 from scipy.sparse import csr_matrix
 import math
@@ -92,20 +92,25 @@ def projector_onto_state(n_vertices, state):
     basis_list = list(it.product(range(2), repeat=n_vertices))
     basis_dict = {basis_list[i]: i for i in range(2**n_vertices)}
     indices = [basis_dict[s] for s in state]
-    return csr_matrix((np.ones(len(indices)), (indices, indices)), shape=(2**n_vertices, 2**n_vertices))
- 
+    return csr_matrix(
+        (np.ones(len(indices)), (indices, indices)),
+        shape=(2**n_vertices, 2**n_vertices)
+        )
+
 def projected_combinatorial_laplacian(n_vertices, k, state_dict):
     P_k = projector_onto_state(n_vertices, state_dict[k])
     P_kp1 = projector_onto_state(n_vertices, state_dict[k+1])
     delta_k = boundary_operator_crsmat_k(n_vertices, k) @ P_k
     delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1) @ P_kp1
-    return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T 
+    return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T
 
 
 
 def initialize_projector(state, circuit=None, initialization_qubits=None, circuit_name=None):
-    '''initializes projector onto subspace spanned by list of states'''
-    '''input circuit has to have classical register'''
+    '''
+    initializes projector onto subspace spanned by list of states
+    input circuit has to have classical register
+    '''
     
     if circuit == None:
         n_vertices = len(state[0])
@@ -120,7 +125,6 @@ def initialize_projector(state, circuit=None, initialization_qubits=None, circui
         for k in range(n_vertices):
             qc.cx(qr1[k],copy_reg[k])
         # qc.barrier()
-        return qc
     else:
         n_vertices = len(state[0])
         qr1 = QuantumRegister(n_vertices, name="state_reg")
@@ -149,7 +153,8 @@ def initialize_projector(state, circuit=None, initialization_qubits=None, circui
         if circuit_name != None:
             sub_inst.name = circuit_name
         qc.append(sub_inst, rest + init)
-        return qc
+        
+    return qc
 
 
 
@@ -327,7 +332,16 @@ class Q_top_spectra:
         return eigenvalue_dict
     
 class Q_persistent_top_spectra:
-    def __init__(self, data=None, distance_matrix=None, max_dimension=None, max_edge_length=None, num_eval_qubits=6, shots=1000, epsilons=None):
+    def __init__(
+            self,
+            data=None,
+            distance_matrix=None,
+            max_dimension=None,
+            max_edge_length=None,
+            num_eval_qubits=6,
+            shots=1000,
+            epsilons=None
+            ):
         '''
         data: point data given by (number_data_points x dim_points)-numpy-array
         distance_matrix: (n x n)-numpy-array describing the pair-wise distances of n data points
@@ -346,7 +360,10 @@ class Q_persistent_top_spectra:
             self.state_dict[key] = {}
             for k in range(1,max_dimension+1):
                 mask = np.sum(self.filt_dict[key],axis=1) == k
-                self.state_dict[key][k-1] = [tuple(s) for s in self.filt_dict[key][mask, :]]
+                self.state_dict[key][k-1] = [
+                    tuple(s) 
+                    for s in self.filt_dict[key][mask, :]
+                    ]
             self.state_dict[key][max_dimension] = [] # an empty state has to be included on order max_dimension for consistency 
         
         self.counts = {}
@@ -361,7 +378,11 @@ class Q_persistent_top_spectra:
                     print("calculation terminated because no simplex of dimension %s" %(top_order))
                     break
                 
-                qc = QTDA_algorithm(num_eval_qubits, top_order, self.state_dict[eps])
+                qc = QTDA_algorithm(
+                    num_eval_qubits,
+                    top_order,
+                    self.state_dict[eps]
+                    )
                 qc.add_register(ClassicalRegister(num_eval_qubits, name="phase"))
                 for q in qc.eval_qubits:
                     qc.measure(q,q)
