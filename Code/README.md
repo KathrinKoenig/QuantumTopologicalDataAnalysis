@@ -17,10 +17,5 @@ To analyse topological features of data clouds on different scales, we have to c
 The third notebook `top_spectra-real_q-device.ipynb` contains the application of the algorithm on a real IBM quantum devise for a small example simplicial complex.
 
 
-[Quantum persistent topological spectra Notebook](https://github.com/KathrinKoenig/QuantumTopologicalDataAnalysis/blob/main/Code/quantum_persistent_top_spectra.ipynb).
-
-
-
-[Introductory Jupyter-Notebook](https://github.com/KathrinKoenig/QuantumTopologicalDataAnalysis/blob/main/Code/Introductory_notebook.ipynb) 
 
 
