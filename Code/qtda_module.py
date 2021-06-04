@@ -62,7 +62,7 @@ def boundary_operator_dict(n_vertices):
         ] = 0
     for bound in it.product(range(2), repeat=n_vertices):
         helper = boundary_operator(bound)
-        for key in helper.keys():
+        for key in helper:
             dictionary[(tuple(bound), key)] = helper[key]
     return dictionary
 
@@ -81,7 +81,7 @@ def boundary_operator_dict_k(n_vertices, k):
     for bound in it.product(range(2), repeat=n_vertices):
         if np.sum(bound) == k+1:
             helper = boundary_operator(bound)
-            for key in helper.keys():
+            for key in helper:
                 dictionary[(tuple(bound), key)] = helper[key]
     return dictionary
 
@@ -93,8 +93,8 @@ def boundary_operator_crsmat(n_vertices):
     dictionary = boundary_operator_dict(n_vertices)
     basis_list = list(it.product(range(2), repeat=n_vertices))
     basis_dict = {basis_list[i]: i for i in range(2**n_vertices)}
-    col = np.array([basis_dict[index[0]] for index in dictionary.keys()])
-    row = np.array([basis_dict[index[1]] for index in dictionary.keys()])
+    col = np.array([basis_dict[index[0]] for index in dictionary])
+    row = np.array([basis_dict[index[1]] for index in dictionary])
     data = np.array(list(dictionary.values()))
     return csr_matrix((data, (row, col)), shape=(2**n_vertices, 2**n_vertices))
 
@@ -106,8 +106,8 @@ def boundary_operator_crsmat_k(n_vertices, k):
     dictionary = boundary_operator_dict_k(n_vertices, k)
     basis_list = list(it.product(range(2), repeat=n_vertices))
     basis_dict = {basis_list[i]: i for i in range(2**n_vertices)}
-    col = np.array([basis_dict[index[0]] for index in dictionary.keys()])
-    row = np.array([basis_dict[index[1]] for index in dictionary.keys()])
+    col = np.array([basis_dict[index[0]] for index in dictionary])
+    row = np.array([basis_dict[index[1]] for index in dictionary])
     data = np.array(list(dictionary.values()))
     return csr_matrix((data, (row, col)), shape=(2**n_vertices, 2**n_vertices))
 
@@ -138,10 +138,10 @@ def projected_combinatorial_laplacian(n_vertices, k, state_dict):
     returns the projected combinatorial Laplacian of order k on n vertices
     as sparse crs matrix
     '''
-    P_k = projector_onto_state(n_vertices, state_dict[k])
-    P_kp1 = projector_onto_state(n_vertices, state_dict[k+1])
-    delta_k = boundary_operator_crsmat_k(n_vertices, k) @ P_k
-    delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1) @ P_kp1
+    p_k = projector_onto_state(n_vertices, state_dict[k])
+    p_kp1 = projector_onto_state(n_vertices, state_dict[k+1])
+    delta_k = boundary_operator_crsmat_k(n_vertices, k) @ p_k
+    delta_kplus1 = boundary_operator_crsmat_k(n_vertices, k+1) @ p_kp1
     return delta_k.conj().T @ delta_k + delta_kplus1 @ delta_kplus1.conj().T
 
 
@@ -159,14 +159,14 @@ def initialize_projector(
         n_vertices = len(state[0])
         qr1 = QuantumRegister(n_vertices, name="state_reg")
         copy_reg = QuantumRegister(n_vertices, name="copy_reg")
-        qc = QuantumCircuit(qr1, copy_reg)
+        quantum_circuit = QuantumCircuit(qr1, copy_reg)
         state_vec = state_to_vec(state)
         state_vec = state_vec/np.linalg.norm(state_vec)
-        qc.initialize(state_vec, qr1)
-        # qc.barrier()
+        quantum_circuit.initialize(state_vec, qr1)
+        # quantum_circuit.barrier()
         for k in range(n_vertices):
-            qc.cx(qr1[k], copy_reg[k])
-        # qc.barrier()
+            quantum_circuit.cx(qr1[k], copy_reg[k])
+        # quantum_circuit.barrier()
     else:
         n_vertices = len(state[0])
         qr1 = QuantumRegister(n_vertices, name="state_reg")
@@ -176,16 +176,16 @@ def initialize_projector(
                 circuit.num_qubits - n_vertices,
                 name="an_reg"
                 )
-            qc = QuantumCircuit(anr, qr1, copy_reg)
+            quantum_circuit = QuantumCircuit(anr, qr1, copy_reg)
         else:
-            qc = QuantumCircuit(qr1, copy_reg)
+            quantum_circuit = QuantumCircuit(qr1, copy_reg)
         state_vec = state_to_vec(state)
         state_vec = state_vec/np.linalg.norm(state_vec)
-        qc.initialize(state_vec, qr1)
-        # qc.barrier()
+        quantum_circuit.initialize(state_vec, qr1)
+        # quantum_circuit.barrier()
         for k in range(n_vertices):
-            qc.cx(qr1[k], copy_reg[k])
-        # qc.barrier()
+            quantum_circuit.cx(qr1[k], copy_reg[k])
+        # quantum_circuit.barrier()
         if initialization_qubits is None:
             init = list(range(n_vertices))
         else:
@@ -194,8 +194,8 @@ def initialize_projector(
         sub_inst = circuit.to_instruction()
         if circuit_name is not None:
             sub_inst.name = circuit_name
-        qc.append(sub_inst, rest + init)
-    return qc
+        quantum_circuit.append(sub_inst, rest + init)
+    return quantum_circuit
 
 
 def simplices_to_states(test_list, n_vertices):
@@ -209,7 +209,7 @@ def simplices_to_states(test_list, n_vertices):
     return arr
 
 
-class data_filtration:
+class DataFiltration:
     '''
     data: point data given by (number_data_points x dim_points)-numpy-array
     distance_matrix: (n x n)-numpy-array describing the pair-wise
@@ -260,19 +260,19 @@ class data_filtration:
 
     def plot_persistence_diagram(self):
         ''' plots a diagram for the persistent topologial features '''
-        BarCodes = self.Rips_simplex_tree.persistence()
-        gd.plot_persistence_diagram(BarCodes, legend=True)
+        bar_codes = self.Rips_simplex_tree.persistence()
+        gd.plot_persistence_diagram(bar_codes, legend=True)
 
 
-def controledU(U, qc, num_eval_qubits, n_vertices):  # , k, state_dict):
+def controled_u(unitary, quantum_circuit, num_eval_qubits, n_vertices):  # , k, state_dict):
     '''
     returns a quantum circuit with the controled unitary for the
     quantum phase estimation routine.
     '''
-    unit = U
+    unit = unitary
     gate = UnitaryGate(unit)
     for counting_qubit in range(num_eval_qubits):
-        qc.append(
+        quantum_circuit.append(
             gate.control(1),
             [counting_qubit] + list(
                 range(num_eval_qubits, num_eval_qubits+n_vertices)
@@ -280,34 +280,34 @@ def controledU(U, qc, num_eval_qubits, n_vertices):  # , k, state_dict):
             )
         unit = unit@unit
         gate = UnitaryGate(unit)
-    return qc
+    return quantum_circuit
 
 
-def qft_dagger(qc, n):
+def qft_dagger(quantum_circuit, num):
     """n-qubit QFTdagger the first n qubits in circ"""
     # Don't forget the Swaps!
-    for qubit in range(n//2):
-        qc.swap(qubit, n-qubit-1)
-    for j in range(n):
-        for m in range(j):
-            qc.cp(-np.pi/float(2**(j-m)), m, j)
-        qc.h(j)
+    for qubit in range(num//2):
+        quantum_circuit.swap(qubit, num-qubit-1)
+    for j in range(num):
+        for k in range(j):
+            quantum_circuit.cp(-np.pi/float(2**(j-k)), k, j)
+        quantum_circuit.h(j)
 
 
 def qpe_total(num_eval_qubits, n_vertices, unitary):  # , k, state_dict):
     '''
     returns the full circuit of the quantum phase estimation
     '''
-    qc = QuantumCircuit(num_eval_qubits + n_vertices)
+    quantum_circuit = QuantumCircuit(num_eval_qubits + n_vertices)
     for qubit in range(num_eval_qubits):
-        qc.h(qubit)
-    controledU(unitary, qc, num_eval_qubits, n_vertices)  # , k, state_dict)
+        quantum_circuit.h(qubit)
+    controled_u(unitary, quantum_circuit, num_eval_qubits, n_vertices)  # , k, state_dict)
     # Apply inverse QFT
-    qft_dagger(qc, num_eval_qubits)
-    return qc
+    qft_dagger(quantum_circuit, num_eval_qubits)
+    return quantum_circuit
 
 
-class QTDA_algorithm(QuantumCircuit):
+class QTDAalgorithm(QuantumCircuit):
     '''
     Class that contains the QTDA algorithm.
     num_eval_qubits: number of qubits for the evaluation in the quantum phase
@@ -365,20 +365,20 @@ class Q_top_spectra:
         self.shots = shots
         self.state_dict = state_dict
         self.counts = {}
-        for top_order in self.state_dict.keys():
+        for top_order in self.state_dict:
             print('Topological order: ', top_order)
             if len(self.state_dict[top_order]) == 0:
                 print(
                     "calculation terminated because no simplex of dimension %s" % (top_order)
                     )
                 break
-            qc = QTDA_algorithm(num_eval_qubits, top_order, self.state_dict)
-            qc.add_register(ClassicalRegister(num_eval_qubits, name="phase"))
-            for q in qc.eval_qubits:
-                qc.measure(q, q)
+            quantum_circuit = QTDAalgorithm(num_eval_qubits, top_order, self.state_dict)
+            quantum_circuit.add_register(ClassicalRegister(num_eval_qubits, name="phase"))
+            for qubit in quantum_circuit.eval_qubits:
+                quantum_circuit.measure(qubit, qubit)
             backend = Aer.get_backend('qasm_simulator')
-            job = execute(qc, backend, shots=self.shots)
-            self.counts[top_order] = job.result().get_counts(qc)
+            job = execute(quantum_circuit, backend, shots=self.shots)
+            self.counts[top_order] = job.result().get_counts(quantum_circuit)
 
     def get_counts(self):
         '''
@@ -396,7 +396,7 @@ class Q_top_spectra:
         if chop is None:
             chop = self.shots/50
         eigenvalue_dict = {}
-        for top_order in self.counts.keys():
+        for top_order in self.counts:
             eigenvalue_dict[top_order] = {}
             eigenvalue_dict[top_order][0.0] = 0
             vals = np.fromiter(self.counts[top_order].values(), dtype=float)
@@ -434,7 +434,7 @@ class Q_persistent_top_spectra:
             ):
 
         self.shots = shots
-        self.filt_dict = data_filtration(
+        self.filt_dict = DataFiltration(
             data=data,
             distance_matrix=distance_matrix,
             max_dimension=max_dimension,
@@ -453,12 +453,12 @@ class Q_persistent_top_spectra:
             # on order max_dimension for consistency
 
         self.counts = {}
-        for eps in self.state_dict.keys():
+        for eps in self.state_dict:
             print()
             print('Filtration scale: ', eps)
             print()
             self.counts[eps] = {}
-            for top_order in self.state_dict[eps].keys():
+            for top_order in self.state_dict[eps]:
                 print('Topological order: ', top_order)
                 if len(self.state_dict[eps][top_order]) == 0:
                     print(
@@ -466,19 +466,19 @@ class Q_persistent_top_spectra:
                         )
                     break
 
-                qc = QTDA_algorithm(
+                quantum_circuit = QTDAalgorithm(
                     num_eval_qubits,
                     top_order,
                     self.state_dict[eps]
                     )
-                qc.add_register(
+                quantum_circuit.add_register(
                     ClassicalRegister(num_eval_qubits, name="phase")
                     )
-                for q in qc.eval_qubits:
-                    qc.measure(q, q)
+                for qubit in quantum_circuit.eval_qubits:
+                    quantum_circuit.measure(qubit, qubit)
                 backend = Aer.get_backend('qasm_simulator')
-                job = execute(qc, backend, shots=self.shots)
-                self.counts[eps][top_order] = job.result().get_counts(qc)
+                job = execute(quantum_circuit, backend, shots=self.shots)
+                self.counts[eps][top_order] = job.result().get_counts(quantum_circuit)
 
     def get_counts(self):
         '''
@@ -497,9 +497,9 @@ class Q_persistent_top_spectra:
             chop = self.shots/50
 
         eigenvalue_dict = {}
-        for eps in self.counts.keys():
+        for eps in self.counts:
             eigenvalue_dict[eps] = {}
-            for top_order in self.counts[eps].keys():
+            for top_order in self.counts[eps]:
                 eigenvalue_dict[eps][top_order] = {}
                 eigenvalue_dict[eps][top_order][0.0] = 0
                 vals = np.fromiter(
@@ -509,9 +509,9 @@ class Q_persistent_top_spectra:
                 indices = np.where(vals >= chop)
                 new_vals = vals[indices]
                 new_keys = [keys[i] for i in indices[0]]
-                for i in range(len(new_keys)):
+                for i, key in enumerate(new_keys):
                     eigenvalue_dict[eps][top_order][
-                        2*np.pi*int(new_keys[i], 2)/int(len(new_keys[i])*'1', 2)
+                        2*np.pi*int(key, 2)/int(len(new_keys[i])*'1', 2)
                         ] = (
                             new_vals[i]
                             * len(self.state_dict[eps][top_order])
