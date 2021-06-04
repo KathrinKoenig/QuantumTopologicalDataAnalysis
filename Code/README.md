@@ -1,11 +1,11 @@
 # Code
 
 ### Dependencies:
-numpy  
-gudhi  
-itertools  
-scipy  
-qiskit  
+[NumPy](https://numpy.org/)  
+[GUDHI](https://gudhi.inria.fr/)  
+[itertools](https://docs.python.org/3/library/itertools.html)  
+[SciPy](https://www.scipy.org/)  
+[Qiskit](https://qiskit.org/)  
 
 The basic Python module `qtda_module.py` contains the base classes generating the quantum circuit of the QTDA-algorithm as well as the data filtration of point data. It builds on the libraries **IBM Qiskit** library (https://github.com/Qiskit) for quantum computing and **GUHDI** (https://github.com/GUDHI) for classical TDA.
 
